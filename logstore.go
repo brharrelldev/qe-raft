@@ -70,6 +70,8 @@ func (b BadgeStore) LastIndex() (uint64, error) {
 			PrefetchValues: false,
 		})
 
+		defer iter.Close()
+
 		iter.Seek(append(prefix, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff))
 
 		if iter.ValidForPrefix(prefix) {
@@ -214,10 +216,25 @@ func (b BadgeStore) Get(key []byte) ([]byte, error) {
 
 func (b BadgeStore) SetUint64(key []byte, val uint64) error {
 	//TODO implement me
-	panic("implement me")
+
+	if err := b.db.Update(func(txn *badger.Txn) error {
+
+		indxBytes := make([]byte, 8)
+
+		binary.LittleEndian.PutUint64(indxBytes, val)
+		badger.NewEntry(key, indxBytes)
+
+		return nil
+
+	}); err != nil {
+		return fmt.Errorf("error setting value %v", err)
+
+	}
+
+	return nil
 }
 
 func (b BadgeStore) GetUint64(key []byte) (uint64, error) {
 	//TODO implement me
-	panic("implement me")
+	return b.FirstIndex()
 }
